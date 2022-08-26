@@ -1,0 +1,3 @@
+﻿C:\DirectX12\Chapter4\BasicVertexShader.hlsl(1,10-34): error X1507: failed to open source file: 'BasicShaderHeader.hlsli'
+  
+  compilation failed; no code produced

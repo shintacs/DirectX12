@@ -1,0 +1,9 @@
+﻿  main.cpp
+C:\DirectX12\Chapter5\main.cpp(271): error C2102: '&' に左辺値がありません。
+C:\DirectX12\Chapter5\main.cpp(273): error C2102: '&' に左辺値がありません。
+C:\DirectX12\Chapter5\main.cpp(298,2): error C2065: 'resdesc': 定義されていない識別子です。
+C:\DirectX12\Chapter5\main.cpp(300,4): error C2065: 'heapprop': 定義されていない識別子です。
+C:\DirectX12\Chapter5\main.cpp(302,4): error C2065: 'resdesc': 定義されていない識別子です。
+C:\DirectX12\Chapter5\main.cpp(513,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter5\main.cpp(514,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter5\main.cpp(621): error C2102: '&' に左辺値がありません。

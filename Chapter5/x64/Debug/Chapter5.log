@@ -1,0 +1,6 @@
+﻿  main.cpp
+C:\DirectX12\Chapter5\main.cpp(512,34): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter5\main.cpp(513,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter5\main.cpp(514,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter5\main.cpp(551,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+  Chapter5.vcxproj -> C:\DirectX12\LearningDirectX12\x64\Debug\Chapter5.exe
