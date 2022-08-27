@@ -636,7 +636,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto worldYMat = XMMatrixRotationY(XM_PIDIV4);
 
 	// ビュー行列の定義
-	XMFLOAT3 eye(0, 0, -5);
+	XMFLOAT3 eye(0, 0, -4);
 	XMFLOAT3 target(0, 0, 0);
 	XMFLOAT3 up(0, 1, 0);
 
