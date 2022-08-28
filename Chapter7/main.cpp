@@ -253,7 +253,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::vector<unsigned char> vertices(vertNum * pmdvertex_size); // バッファーの確保（vertNumに頂点サイズ38バイトを掛ける）
 	fread(vertices.data(), vertices.size(), 1, fp); // 読み込み
 
-	fclose(fp); // ファイルのクローズ
 
 	// UPLOAD
 	ID3D12Resource* vertBuff = nullptr;
@@ -278,7 +277,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vbView.SizeInBytes = vertices.size();//全バイト数
 	vbView.StrideInBytes = pmdvertex_size;//1頂点あたりのバイト数
 
-	unsigned short indices[] = { 0,1,2, 2,1,3 };
+	//unsigned short indices[] = { 0,1,2, 2,1,3 };	
+	std::vector<unsigned short> indices;
+
+	// インデックスデータ読み込みの準備
+	unsigned int indicesNum;
+	fread(&indicesNum, sizeof(indicesNum), 1, fp);
+	std::cout << "indicesNum: " << indicesNum << std::endl;
+
+	// インデックスデータの読み込み
+	indices.resize(indicesNum);
+	fread(indices.data(), indices.size() * sizeof(indices[0]), 1, fp);
+
+	fclose(fp); // ファイルのクローズ
 
 	ID3D12Resource* idxBuff = nullptr;
 	//設定は、バッファのサイズ以外頂点バッファの設定を使いまわして
@@ -287,7 +298,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(indices)),
+		&CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(indices[0])),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&idxBuff));
@@ -295,14 +306,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//作ったバッファにインデックスデータをコピー
 	unsigned short* mappedIdx = nullptr;
 	idxBuff->Map(0, nullptr, (void**)&mappedIdx);
-	std::copy(std::begin(indices), std::end(indices), mappedIdx);
+	std::copy(indices.begin(), indices.end(), mappedIdx);
 	idxBuff->Unmap(0, nullptr);
 
 	//インデックスバッファビューを作成
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
 	ibView.BufferLocation = idxBuff->GetGPUVirtualAddress();
 	ibView.Format = DXGI_FORMAT_R16_UINT;
-	ibView.SizeInBytes = sizeof(indices);
+	ibView.SizeInBytes = indices.size() * sizeof(indices[0]);
 
 	ID3DBlob* _vsBlob = nullptr;
 	ID3DBlob* _psBlob = nullptr;
@@ -669,15 +680,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			basicDescHeap->GetGPUDescriptorHandleForHeapStart()
 		);
 
-		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		_cmdList->IASetVertexBuffers(0, 1, &vbView);
 		_cmdList->IASetIndexBuffer(&ibView);
 
-		_cmdList->DrawInstanced(vertNum, 1, 0, 0);
+		_cmdList->DrawIndexedInstanced(indicesNum, 1, 0, 0, 0);
 
 		//命令のクローズ
 		_cmdList->Close();
-
 
 
 		//コマンドリストの実行
