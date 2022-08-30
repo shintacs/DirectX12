@@ -33,6 +33,14 @@ struct PMDVertex
 	unsigned char edgeFlg; // 輪郭線フラグ（1バイト）
 };
 
+// シェーダー側に渡すための行列データ
+struct MatricesData
+{
+	// 法線ベクトルをモデルの動きに合わせるために定義
+	XMMATRIX world; // モデル本体を回転させたり移動させたりするための行列
+	XMMATRIX viewproj; // ビューとプロジェクション合成行列
+};
+
 ///@brief コンソール画面にフォーマット付き文字列を表示
 ///@param format フォーマット(%dとか%fとかの)
 ///@param 可変長引数
@@ -659,18 +667,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 定数バッファーの作成
 	ID3D12Resource* constBuff = nullptr;
 
-	_dev->CreateCommittedResource(
+	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(XMMATRIX) + 0xff) & ~0xff),
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(MatricesData) + 0xff) & ~0xff), // バッファーのサイズに合わせて確保する領域を変化させる
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuff)
 	);
+	std::cout << "定数バッファーの作成確認: " << result << std::endl;
 
-	XMMATRIX* mapMatrix; // マップ先を示すポインター
+	MatricesData* mapMatrix; // マップ先を示すポインター
 	result = constBuff->Map(0, nullptr, (void**)&mapMatrix); // マップ
-	*mapMatrix = worldMat * viewMat * projMat; //行列の内容をコピー
+	mapMatrix->world = worldMat;
+	mapMatrix->viewproj = viewMat * projMat;
+	//*mapMatrix = worldMat * viewMat * projMat; //行列の内容をコピー
 
 						 // 次の場所に移動
 	basicHeapHandle.ptr += _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -698,8 +709,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
-		angle += 0.1f;
-		*mapMatrix = worldMat * viewMat * projMat;
+		angle += 0.02f;
+		mapMatrix->world = XMMatrixRotationY(angle);
+		mapMatrix->viewproj = viewMat * projMat;
 
 		//DirectX処理
 		//バックバッファのインデックスを取得

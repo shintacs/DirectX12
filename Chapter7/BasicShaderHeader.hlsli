@@ -7,5 +7,6 @@ struct Output
 
 cbuffer cbuff0 : register(b0) // 定数バッファー
 {
-	matrix mat; // 変換行列
+	matrix world; // ワールド変換行列
+	matrix viewproj; // ビュープロジェクション行列
 };

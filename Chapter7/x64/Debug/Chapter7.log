@@ -1,9 +1,9 @@
 ﻿  main.cpp
-C:\DirectX12\Chapter7\main.cpp(277,38): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(316,58): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(572,34): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(573,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(574,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(600,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter7\main.cpp(680,44): warning C4244: '=': 'UINT64' から 'UINT' への変換です。データが失われる可能性があります。
+C:\DirectX12\Chapter7\main.cpp(285,38): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(324,58): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(580,34): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(581,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(582,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(608,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter7\main.cpp(691,44): warning C4244: '=': 'UINT64' から 'UINT' への変換です。データが失われる可能性があります。
   Chapter7.vcxproj -> C:\DirectX12\LearningDirectX12\x64\Debug\Chapter7.exe
