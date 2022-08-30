@@ -1,13 +1,9 @@
-﻿C:\DirectX12\Chapter8\BasicPixelShader.hlsl(6,21-45): warning X3206: 'dot': implicit truncation of vector type
-  
-  compilation object save succeeded; see C:\DirectX12\LearningDirectX12\x64\Debug\BasicPixelShader.cso
-  compilation object save succeeded; see C:\DirectX12\LearningDirectX12\x64\Debug\BasicVertexShader.cso
-  main.cpp
-C:\DirectX12\Chapter8\main.cpp(285,38): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(324,58): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(580,34): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(581,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(582,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(608,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
-C:\DirectX12\Chapter8\main.cpp(691,44): warning C4244: '=': 'UINT64' から 'UINT' への変換です。データが失われる可能性があります。
+﻿  main.cpp
+C:\DirectX12\Chapter8\main.cpp(304,38): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(352,58): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(608,34): warning C4267: '=': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(609,47): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(610,40): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(636,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+C:\DirectX12\Chapter8\main.cpp(719,44): warning C4244: '=': 'UINT64' から 'UINT' への変換です。データが失われる可能性があります。
   Chapter8.vcxproj -> C:\DirectX12\LearningDirectX12\x64\Debug\Chapter8.exe

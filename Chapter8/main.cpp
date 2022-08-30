@@ -22,6 +22,24 @@
 
 using namespace DirectX;
 
+#pragma pack(1) // 1バイトパッキングとなり，アライメントは発生しない（？）
+
+// PMDマテリアル読み込み用の構造体
+struct PMDMaterial
+{
+	XMFLOAT3 diffuse; // ディフューズ色
+	float alpha; // ディフューズα
+	float specularity; // スペキュラの強さ
+	XMFLOAT3 specular; // スペキュラの色
+	XMFLOAT3 ambient; // アンビエントの色
+	unsigned char toonIdx; // トゥーン番号
+	unsigned char edgeFlg; // マテリアルごとの輪郭線フラグ
+	unsigned int indicesNum; // このマテリアルが割り当てられるインデックス数
+	char texFilePath[20]; // テクスチャファイルパス+α
+}; // 本来は70バイトだが，パディングによって72バイトになるらしい
+
+#pragma pack() // 元に戻す
+
 // PMD頂点構造体
 struct PMDVertex
 {
@@ -40,6 +58,33 @@ struct MatricesData
 	XMMATRIX world; // モデル本体を回転させたり移動させたりするための行列
 	XMMATRIX viewproj; // ビューとプロジェクション合成行列
 };
+
+// シェーダー側に投げられるマテリアルデータ
+struct MaterialForHlsl
+{
+	XMFLOAT3 diffuse; // ディフーズ色
+	float alpha; // ディフューズα
+	XMFLOAT3 specular; // スペキュラ色
+	float specularity; // スペキュラの強さ（乗算値）
+	XMFLOAT3 ambient; // アンビエント色
+};
+
+// それ以外のマテリアルデータ
+struct AdditionalMaterial
+{
+	std::string texPath; // テクスチャファイルパス
+	int toonIdx; // トゥーン番号
+	bool edgeFlg; // マテリアルごとの輪郭線フラグ
+};
+
+// 全体をまとめるデータ
+struct Material
+{
+	unsigned int indicesNum; // インデックス数
+	MaterialForHlsl material;
+	AdditionalMaterial additional;
+};
+
 
 ///@brief コンソール画面にフォーマット付き文字列を表示
 ///@param format フォーマット(%dとか%fとかの)
@@ -297,7 +342,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indices.resize(indicesNum);
 	fread(indices.data(), indices.size() * sizeof(indices[0]), 1, fp);
 
+	// PMDモデルのマテリアルの読み込み
+	unsigned int materialNum; // マテリアル数
+	fread(&materialNum, sizeof(materialNum), 1, fp); // マテリアル数を読み込む
+	std::cout << "マテリアルの数: " << materialNum << std::endl;
+
+	std::vector<PMDMaterial> pmdMaterials(materialNum);
+
+	fread(pmdMaterials.data(), pmdMaterials.size() * sizeof(PMDMaterial), 1, fp); // 一気に読み込む
+
 	fclose(fp); // ファイルのクローズ
+
+	// マテリアルの設定
+	std::vector<Material> materials(pmdMaterials.size());
+
+	// コピー
+	for (int i = 0; i < pmdMaterials.size(); ++i)
+	{
+		materials[i].indicesNum = pmdMaterials[i].indicesNum;
+		materials[i].material.diffuse = pmdMaterials[i].diffuse;
+		materials[i].material.alpha = pmdMaterials[i].alpha;
+		materials[i].material.specular = pmdMaterials[i].specular;
+		materials[i].material.specularity = pmdMaterials[i].specularity;
+		materials[i].material.ambient = pmdMaterials[i].ambient;
+	}
 
 	ID3D12Resource* idxBuff = nullptr;
 	//設定は、バッファのサイズ以外頂点バッファの設定を使いまわして
