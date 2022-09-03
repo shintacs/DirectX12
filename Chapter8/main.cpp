@@ -255,7 +255,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ShowWindow(hwnd, SW_SHOW);//ウィンドウ表示
 
-	std::cout << "hello" << std::endl;
 	// PMDヘッダー構造
 	struct PMDHeader
 	{
@@ -556,21 +555,58 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	D3D12_DESCRIPTOR_RANGE descTblRange[2] = {};
 
+	/*
+	// 定数用レジスター0番
+	descTblRange[0].NumDescriptors = 1; // 定数は1つ
+	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
+	descTblRange[0].BaseShaderRegister = 0; //0番スロットから
+	descTblRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// マテリアル用レジスター1番
+	descTblRange[1].NumDescriptors = 1; // ディスクリプタヒープは複数だが一度に使うのは一つ
+	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
+	descTblRange[1].BaseShaderRegister = 1; // 1番スロットから（始める？）
+	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// テクスチャ用レジスター0番
+	descTblRange[2].NumDescriptors = 1; // テクスチャは1つ
+	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // 種別はテクスチャ
+	descTblRange[2].BaseShaderRegister = 0; //0番スロットから
+	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	*/
+
+
 	// テクスチャ用レジスター0番
 	descTblRange[0].NumDescriptors = 1; // テクスチャは1つ
 	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // 種別はテクスチャ
 	descTblRange[0].BaseShaderRegister = 0; //0番スロットから
 	descTblRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
+	
 	// 定数用レジスター0番
-	descTblRange[1].NumDescriptors = 1; // テクスチャは1つ
+	descTblRange[1].NumDescriptors = 1; // 定数は1つ
 	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
 	descTblRange[1].BaseShaderRegister = 0; //0番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
+	
 	// ルートパラメータの設定（定数は頂点の座標変換なので，頂点シェーダーから見えるようにしたい）
+	// D3D12_ROOT_PARAMETER rootparam[2] = {};
 	D3D12_ROOT_PARAMETER rootparam = {};
 
+	/*
+	// 定数一つ目のルートパラメタ
+	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootparam[0].DescriptorTable.pDescriptorRanges = &descTblRange[0]; // 配列先頭アドレス
+	rootparam[0].DescriptorTable.NumDescriptorRanges = 1; // ディスクリプタレンジ数
+	rootparam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
+
+	// 定数二つ目のルートパラメタ
+	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[1]; // 配列先頭アドレス
+	rootparam[1].DescriptorTable.NumDescriptorRanges =; // ディスクリプタレンジ数
+	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
+	*/
+
+	// 定数一つ目のルートパラメタ
 	rootparam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam.DescriptorTable.pDescriptorRanges = descTblRange; // 配列先頭アドレス
 	rootparam.DescriptorTable.NumDescriptorRanges = 2; // ディスクリプタレンジ数
@@ -761,7 +797,60 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 定数バッファービューの作成
 	_dev->CreateConstantBufferView(&cbvDesc, basicHeapHandle);
 
+	// マテリアルバッファーの作成
+	auto materialBuffSize = sizeof(MaterialForHlsl);
+	materialBuffSize = (materialBuffSize + 0xff) & ~0xff; // 256アライメントにするための処理
 
+	ID3D12Resource* materialBuff = nullptr;
+
+	result = _dev->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(materialBuffSize * materialNum),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&materialBuff)
+	);
+
+	// マテリアルバッファーにデータをコピー
+	char* mapMaterial = nullptr;
+
+	result = materialBuff->Map(0, nullptr, (void**)&mapMaterial);
+
+
+	for (auto& m : materials) {
+		*((MaterialForHlsl*)mapMaterial) = m.material; // データのコピー
+		mapMaterial += materialBuffSize; // 次のアライメントの位置まで進める
+	}
+	materialBuff->Unmap(0, nullptr);
+
+	// マテリアル用のディスクリプタヒープ
+	ID3D12DescriptorHeap* materialDescHeap = nullptr;
+
+	D3D12_DESCRIPTOR_HEAP_DESC matDescHeapDesc = {};
+	matDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	matDescHeapDesc.NodeMask = 0;
+	matDescHeapDesc.NumDescriptors = materialNum; // ビューはマテリアルの数だけ作る
+	matDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	result = _dev->CreateDescriptorHeap(&matDescHeapDesc, IID_PPV_ARGS(&materialDescHeap)); // 生成
+	std::cout << "マテリアル用のディスクリプタヒープの作成確認: " << result << std::endl;
+
+	// マテリアル用のビューの作成
+	D3D12_CONSTANT_BUFFER_VIEW_DESC matCBVDesc = {};
+
+	matCBVDesc.BufferLocation = materialBuff->GetGPUVirtualAddress(); // バッファーアドレス
+	matCBVDesc.SizeInBytes = materialBuffSize; // マテリアル256アラインメントサイズ
+
+	auto matDescHeapH = materialDescHeap->GetCPUDescriptorHandleForHeapStart(); // ディスクリプタヒープの先頭を記録
+
+	// ループで各マテリアルのビューを作成する
+	for (int i = 0; i < materialNum; ++i)
+	{
+		_dev->CreateConstantBufferView(&matCBVDesc, matDescHeapH);
+		matDescHeapH.ptr += _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		matCBVDesc.BufferLocation += materialBuffSize;
+	}
 
 	MSG msg = {};
 	unsigned int frame = 0;
@@ -796,7 +885,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		_cmdList->SetPipelineState(_pipelinestate);
 
-
 		//レンダーターゲットを指定
 		auto rtvH = rtvHeaps->GetCPUDescriptorHandleForHeapStart();
 		rtvH.ptr += bbIdx * _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -820,6 +908,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			0,
 			basicDescHeap->GetGPUDescriptorHandleForHeapStart()
 		);
+
+		// マテリアル用ビューのセット
+		/*
+		_cmdList->SetDescriptorHeaps(1, &materialDescHeap);
+		_cmdList->SetGraphicsRootDescriptorTable(
+			1,
+			materialDescHeap->GetGPUDescriptorHandleForHeapStart()
+		);
+		*/
 
 		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		_cmdList->IASetVertexBuffers(0, 1, &vbView);
