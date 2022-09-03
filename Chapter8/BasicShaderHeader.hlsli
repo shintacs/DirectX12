@@ -12,11 +12,10 @@ cbuffer cbuff0 : register(b0) // 定数バッファー
 };
 
 // b1の受け取り（マテリアルの要素を返す）
-/*
+
 cbuffer Material : register(b1)
 {
 	float4 diffuse; // ディヒューズ色
 	float4 specular; // スペキュラ
 	float4 ambient; // アンビエント（環境光）
 };
-*/

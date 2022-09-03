@@ -553,7 +553,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	gpipeline.SampleDesc.Quality = 0;//クオリティは最低
 
 
-	D3D12_DESCRIPTOR_RANGE descTblRange[2] = {};
+	D3D12_DESCRIPTOR_RANGE descTblRange[3] = {};
 
 	/*
 	// 定数用レジスター0番
@@ -561,13 +561,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
 	descTblRange[0].BaseShaderRegister = 0; //0番スロットから
 	descTblRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
 	// マテリアル用レジスター1番
 	descTblRange[1].NumDescriptors = 1; // ディスクリプタヒープは複数だが一度に使うのは一つ
 	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
 	descTblRange[1].BaseShaderRegister = 1; // 1番スロットから（始める？）
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
 	// テクスチャ用レジスター0番
 	descTblRange[2].NumDescriptors = 1; // テクスチャは1つ
 	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // 種別はテクスチャ
@@ -581,16 +579,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // 種別はテクスチャ
 	descTblRange[0].BaseShaderRegister = 0; //0番スロットから
 	descTblRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	
+
 	// 定数用レジスター0番
 	descTblRange[1].NumDescriptors = 1; // 定数は1つ
 	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
 	descTblRange[1].BaseShaderRegister = 0; //0番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	
+
+	// マテリアル用レジスター1番
+	descTblRange[2].NumDescriptors = 1; // ディスクリプタヒープは複数だが一度に使うのは一つ
+	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // 種別は定数
+	descTblRange[2].BaseShaderRegister = 1; // 1番スロットから（始める？）
+	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 	// ルートパラメータの設定（定数は頂点の座標変換なので，頂点シェーダーから見えるようにしたい）
-	// D3D12_ROOT_PARAMETER rootparam[2] = {};
-	D3D12_ROOT_PARAMETER rootparam = {};
+	D3D12_ROOT_PARAMETER rootparam[2] = {};
+	//D3D12_ROOT_PARAMETER rootparam[1] = {};
 
 	/*
 	// 定数一つ目のルートパラメタ
@@ -598,7 +602,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootparam[0].DescriptorTable.pDescriptorRanges = &descTblRange[0]; // 配列先頭アドレス
 	rootparam[0].DescriptorTable.NumDescriptorRanges = 1; // ディスクリプタレンジ数
 	rootparam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
-
 	// 定数二つ目のルートパラメタ
 	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[1]; // 配列先頭アドレス
@@ -607,17 +610,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*/
 
 	// 定数一つ目のルートパラメタ
-	rootparam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootparam.DescriptorTable.pDescriptorRanges = descTblRange; // 配列先頭アドレス
-	rootparam.DescriptorTable.NumDescriptorRanges = 2; // ディスクリプタレンジ数
-	rootparam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
+	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootparam[0].DescriptorTable.pDescriptorRanges = &descTblRange[0]; // 配列先頭アドレス
+	rootparam[0].DescriptorTable.NumDescriptorRanges = 2; // ディスクリプタレンジ数
+	rootparam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
+
+	// 定数二つ目のルートパラメタ
+	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[2]; // 配列先頭アドレス
+	rootparam[1].DescriptorTable.NumDescriptorRanges = 1; // ディスクリプタレンジ数
+	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // すべてのシェーダーから見える
 
 	ID3D12RootSignature* rootsignature = nullptr;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	rootSignatureDesc.pParameters = &rootparam; // ルートパラメータの先頭アドレス
-	rootSignatureDesc.NumParameters = 1; // ルートパラメータ数
+	rootSignatureDesc.pParameters = rootparam; // ルートパラメータの先頭アドレス
+	rootSignatureDesc.NumParameters = 2; // ルートパラメータ数
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //横方向の繰り返し
@@ -910,13 +919,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		);
 
 		// マテリアル用ビューのセット
-		/*
+		
 		_cmdList->SetDescriptorHeaps(1, &materialDescHeap);
 		_cmdList->SetGraphicsRootDescriptorTable(
 			1,
 			materialDescHeap->GetGPUDescriptorHandleForHeapStart()
 		);
-		*/
+		
 
 		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		_cmdList->IASetVertexBuffers(0, 1, &vbView);
