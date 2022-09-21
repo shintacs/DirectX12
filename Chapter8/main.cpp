@@ -138,7 +138,7 @@ std::string GetTexturePathFromModelAndTexPath(
 	int pathIndex1 = modelPath.rfind('/');
 	int pathIndex2 = modelPath.rfind('\\');
 	auto pathIndex = max(pathIndex1, pathIndex2);
-	auto folderPath = modelPath.substr(0, pathIndex);
+	auto folderPath = modelPath.substr(0, pathIndex+1); // 教科書の誤植
 	return folderPath + texPath;
 }
 
@@ -172,6 +172,33 @@ std::wstring GetWideStringFromString(const std::string& str)
 
 	assert(num1 == num2); // 念のためにチェック
 	return wstr;
+}
+
+// 拡張子を得る関数
+// @param path 対象のパス文字列
+// @return 拡張子
+std::string GetExtension(const std::string& path)
+{
+	int idx = path.rfind('.');
+	return path.substr(
+		idx + 1, path.length() - idx - 1
+	);
+}
+
+// 区切り文字で分離してファイル名を取得する
+// @param path
+// @param splitter
+// @return 分離前後の文字列ペア
+std::pair<std::string, std::string> SplitFileName(
+	const std::string& path, const char splitter = '*')
+{
+	int idx = path.find(splitter);
+	std::pair<std::string, std::string> ret;
+	ret.first = path.substr(0, idx);
+	ret.second = path.substr(
+		idx + 1, path.length() - idx - 1
+	);
+	return ret;
 }
 
 // ロードからデータコピーまでの処理を関数化
@@ -246,6 +273,58 @@ ID3D12Resource* LoadTextureFromFile(std::string& texPath)
 
 	return texbuff;
 
+}
+
+// float4(1, 1, 1, 1)のテクスチャを作る
+ID3D12Resource* CreateWhiteTexture()
+{
+	D3D12_HEAP_PROPERTIES texHeapProp = {};
+	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	texHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	texHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	// texHeapProp.CreationNodeMask = 0;
+	texHeapProp.VisibleNodeMask = 0;
+
+	D3D12_RESOURCE_DESC resDesc = {};
+	resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	resDesc.Width = 4;
+	resDesc.Height = 4; // 最小単位
+	resDesc.DepthOrArraySize = 1;
+	resDesc.SampleDesc.Count = 1;
+	resDesc.SampleDesc.Quality = 0;
+	resDesc.MipLevels = 1;
+	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	ID3D12Resource* whiteBuff = nullptr;
+
+	auto result = _dev->CreateCommittedResource(
+		&texHeapProp,
+		D3D12_HEAP_FLAG_NONE, // 特に指定なし
+		&resDesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&whiteBuff)
+	);
+
+	if (FAILED(result))
+	{
+		return nullptr;
+	}
+	std::vector<unsigned char> data(4 * 4 * 4);
+	std::fill(data.begin(), data.end(), 0xff); // 全部255で埋める（白で塗りつぶす）
+
+	// データ転送
+	result = whiteBuff->WriteToSubresource(
+		0,
+		nullptr,
+		data.data(),
+		4 * 4,
+		data.size()
+	);
+
+	return whiteBuff;
 }
 
 #ifdef _DEBUG
@@ -376,6 +455,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ShowWindow(hwnd, SW_SHOW);//ウィンドウ表示
 
+	auto whiteTex = CreateWhiteTexture();
+
 	// PMDヘッダー構造
 	struct PMDHeader
 	{
@@ -390,6 +471,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	FILE* fp;
 	// auto err = fopen_s(&fp, "Model/初音ミク.pmd", "rb");
 	std::string strModelPath = "Model/初音ミク.pmd";
+	//std::string strModelPath = "Model/巡音ルカ.pmd";
 	// auto fp = fopen(strModelPath.c_str(), "rb"); // もしかしたらここでエラー出るかも
 	fopen_s(&fp, strModelPath.c_str(), "rb");
 
@@ -495,16 +577,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// PMDマテリアルループ
 	for (int i = 0; i < pmdMaterials.size(); ++i)
 	{
-		if (strlen(pmdMaterials[i].texFilePath) == 0) // ロードができなかった場合はnullptrを入れる
+		std::string texFileName = pmdMaterials[i].texFilePath;
+
+		if (std::count(texFileName.begin(), texFileName.end(), '*'))
 		{
-			textureResources[i] = nullptr;
+			// スプリッタがある場合
+			auto namepair = SplitFileName(texFileName);
+			if (GetExtension(namepair.first) == "sph" || GetExtension(namepair.first) == "spa")
+			{
+				texFileName = namepair.second;
+			}
+			else
+			{
+				texFileName = namepair.first;
+			}
 		}
+		//if (strlen(pmdMaterials[i].texFilePath) == 0) // ロードができなかった場合はnullptrを入れる
+		//{
+		//	textureResources[i] = nullptr;
+		//}
 
 		// モデルとテクスチャパスからアプリケーションからのテクスチャパスを得る
 		auto texFilePath = GetTexturePathFromModelAndTexPath(
 			strModelPath,
-			pmdMaterials[i].texFilePath);
+			texFileName.c_str());
 
+		std::cout << "texFilePath: " << texFilePath << std::endl;
 		textureResources[i] = LoadTextureFromFile(texFilePath);
 	}
 
@@ -980,7 +1078,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	auto matDescHeapH = materialDescHeap->GetCPUDescriptorHandleForHeapStart(); // ディスクリプタヒープの先頭を記録
 
-	auto inc = _dev->GetDescriptorHandleIncrementSize(
+	auto incSize = _dev->GetDescriptorHandleIncrementSize(
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 	);
 
@@ -989,21 +1087,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{	
 		// マテリアル用定数バッファービュー
 		_dev->CreateConstantBufferView(&matCBVDesc, matDescHeapH);
-		matDescHeapH.ptr += inc;
+		matDescHeapH.ptr += incSize;
 		matCBVDesc.BufferLocation += materialBuffSize;
 
 		// シェーダーリソースビュー
-		if (textureResources[i] != nullptr)
+		if (textureResources[i] == nullptr)
 		{
-			srvDesc.Format = textureResources[i]->GetDesc().Format;
+			srvDesc.Format = whiteTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(
+				whiteTex, &srvDesc, matDescHeapH
+			);
 		}
-		_dev->CreateShaderResourceView(
-			textureResources[i],
-			&srvDesc,
-			matDescHeapH
-		);
+		else
+		{
+			std::cout << "texture!!" << std::endl;
+			srvDesc.Format = textureResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(
+				textureResources[i],
+				&srvDesc,
+				matDescHeapH);
+		}
+		
+		matDescHeapH.ptr += incSize;
 
-		matDescHeapH.ptr += inc;
 	}
 
 
