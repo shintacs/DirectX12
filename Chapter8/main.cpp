@@ -52,12 +52,13 @@ struct PMDVertex
 };
 
 // シェーダー側に渡すための行列データ
-struct MatricesData
+struct SceneMatrix
 {
 	// 法線ベクトルをモデルの動きに合わせるために定義
 	XMMATRIX world; // モデル本体を回転させたり移動させたりするための行列
 	XMMATRIX view; // ビュー行列
 	XMMATRIX proj; // プロジェクション行列
+	XMFLOAT3 eye; // 視点座標
 };
 
 // シェーダー側に投げられるマテリアルデータ
@@ -525,8 +526,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	FILE* fp;
 	// auto err = fopen_s(&fp, "Model/初音ミク.pmd", "rb");
 	//std::string strModelPath = "Model/初音ミク.pmd";
-	//std::string strModelPath = "Model/初音ミクmetal.pmd";
-	std::string strModelPath = "Model/巡音ルカ.pmd";
+	std::string strModelPath = "Model/初音ミクmetal.pmd";
+	//std::string strModelPath = "Model/巡音ルカ.pmd";
 	// auto fp = fopen(strModelPath.c_str(), "rb"); // もしかしたらここでエラー出るかも
 	fopen_s(&fp, strModelPath.c_str(), "rb");
 
@@ -1135,8 +1136,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMMATRIX worldMat = XMMatrixIdentity();
 
 	// ビュー行列の定義
-	XMFLOAT3 eye(0, 10, -15);
-	XMFLOAT3 target(0, 10, 0);
+	XMFLOAT3 eye(0, 15, -10);
+	XMFLOAT3 target(0, 15, 0);
 	XMFLOAT3 up(0, 1, 0);
 
 	// XMFLOAT3からXMVECTORへの変換
@@ -1156,14 +1157,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(MatricesData) + 0xff) & ~0xff), // バッファーのサイズに合わせて確保する領域を変化させる
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneMatrix) + 0xff) & ~0xff), // バッファーのサイズに合わせて確保する領域を変化させる
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuff)
 	);
 	std::cout << "定数バッファーの作成確認: " << result << std::endl;
 
-	MatricesData* mapMatrix; // マップ先を示すポインター
+	SceneMatrix* mapMatrix; // マップ先を示すポインター
 	result = constBuff->Map(0, nullptr, (void**)&mapMatrix); // マップ
 	mapMatrix->world = worldMat;
 	mapMatrix->view = viewMat;

@@ -10,6 +10,7 @@ Output BasicVS(float4 pos : POSITION, float4 normal : NORMAL, float2 uv : TEXCOO
 	normal.w = 0; // 平行移動成分を無効にする（法線ベクトルは移動による影響を受けないため）
 	output.normal = mul(world, normal); // 法線ベクトルの値（法線にもワールド変換を行う）
 	output.vnormal = mul(view, output.normal);
+	output.ray = normalize(pos.xyz - mul(view, eye)); // 視線の向き
 	output.uv = uv;
 	return output;
 }

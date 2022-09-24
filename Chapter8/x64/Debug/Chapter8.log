@@ -1,4 +1,6 @@
-﻿C:\DirectX12\Chapter8\BasicPixelShader.hlsl(9,21-45): warning X3206: 'dot': implicit truncation of vector type
+﻿C:\DirectX12\Chapter8\BasicPixelShader.hlsl(10,21-45): warning X3206: 'dot': implicit truncation of vector type
+C:\DirectX12\Chapter8\BasicPixelShader.hlsl(13,28-52): warning X3206: 'dot': implicit truncation of vector type
+C:\DirectX12\Chapter8\BasicPixelShader.hlsl(38,12-29): warning X3206: implicit truncation of vector type
   
   compilation object save succeeded; see C:\DirectX12\LearningDirectX12\x64\Debug\BasicPixelShader.cso
   Chapter8.vcxproj -> C:\DirectX12\LearningDirectX12\x64\Debug\Chapter8.exe

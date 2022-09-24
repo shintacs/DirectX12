@@ -34,7 +34,7 @@ struct PMDVertex
 };
 
 // シェーダー側に渡すための行列データ
-struct MatricesData
+struct SceneMatrix
 {
 	// 法線ベクトルをモデルの動きに合わせるために定義
 	XMMATRIX world; // モデル本体を回転させたり移動させたりするための行列
@@ -670,14 +670,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(MatricesData) + 0xff) & ~0xff), // バッファーのサイズに合わせて確保する領域を変化させる
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneMatrix) + 0xff) & ~0xff), // バッファーのサイズに合わせて確保する領域を変化させる
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuff)
 	);
 	std::cout << "定数バッファーの作成確認: " << result << std::endl;
 
-	MatricesData* mapMatrix; // マップ先を示すポインター
+	SceneMatrix* mapMatrix; // マップ先を示すポインター
 	result = constBuff->Map(0, nullptr, (void**)&mapMatrix); // マップ
 	mapMatrix->world = worldMat;
 	mapMatrix->viewproj = viewMat * projMat;
