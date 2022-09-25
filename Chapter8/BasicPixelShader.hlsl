@@ -11,6 +11,7 @@ float4 BasicPS(Output input) : SV_TARGET{
 	float4 texColor = tex.Sample(smp, input.uv); // テクスチャカラー
 
 	float diffuseB = saturate(dot(-light, input.normal));
+	float4 toonDif = toon.Sample(smp, float2(0, 1.0 - diffuseB));
 	
 	float2 sphereMapUV = input.vnormal.xy;
 	sphereMapUV = (sphereMapUV + float2(1, -1)) * float2(0.5, -0.5);
@@ -29,11 +30,11 @@ float4 BasicPS(Output input) : SV_TARGET{
 	//return max(diffuseB * diffuse * texColor + float4(specularB * specular.rgb, 1), float4(ambient*texColor, 1));
 	//return float4(brightness, brightness, brightness, 1) * diffuse * texColor * sphMap + spaMap + texColor*ambient;
 	return max(
-		diffuseB // 輝度
+		toonDif // 輝度
 		* diffuse // ディフューズ色
 		* texColor // テクスチャカラー
 		* sphMap // スフィアマップ（乗算）
-		+ spaMap // スフィアマップ（加算）
-		+ float4(specularB * specular.rgb, 1) // スペキュラ
-		, float4(texColor * ambient, 1));
+		+ saturate(spaMap // スフィアマップ（加算）
+		+ float4(specularB * specular.rgb, 1)) // スペキュラ
+		, float4(texColor* ambient, 1));
 }

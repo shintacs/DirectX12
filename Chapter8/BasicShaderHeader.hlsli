@@ -31,3 +31,6 @@ Texture2D<float4> sph : register(t1); // 1番スロットに設定されたテクスチャ
 
 // spa用のテクスチャ変数
 Texture2D<float4> spa : register(t2); // 2番スロットに設定されたテクスチャ
+
+// トゥーンテクスチャを受け取る
+Texture2D<float4> toon : register(t3); // 3番スロットに設定されたテクスチャ（トゥーン）
