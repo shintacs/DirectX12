@@ -853,7 +853,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_DESCRIPTOR_HEAP_DESC matDescHeapDesc = {};
 	matDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	matDescHeapDesc.NodeMask = 0;
-	matDescHeapDesc.NumDescriptors = materialNum * 4; // マテリアル，テクスチャ，スフィアマップ，加算スフィアマップで4倍のディスクリプタ数が必要
+	matDescHeapDesc.NumDescriptors = materialNum * 5; // マテリアル，テクスチャ，スフィアマップ，加算スフィアマップ，toonで4倍のディスクリプタ数が必要
 	matDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
 	result = _dev->CreateDescriptorHeap(&matDescHeapDesc, IID_PPV_ARGS(&materialDescHeap)); // 生成
@@ -903,7 +903,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				&srvDesc,
 				matDescHeapH);
 		}
-
 		matDescHeapH.ptr += incSize;
 
 		std::cout << "sphResources[" << i << "]: " << sphResources[i] << std::endl;
@@ -941,6 +940,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		matDescHeapH.ptr += incSize;
 
 		// トゥーンテクスチャの読み込みに成功していたらそのまま割り当てて，nullptrであればgradTexを割り当てる
+		std::cout << "toonResources[" << i << "]: " << toonResources[i] << std::endl;
 		if (toonResources[i] == nullptr)
 		{
 			srvDesc.Format = gradTex->GetDesc().Format;
@@ -1159,19 +1159,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootSignatureDesc.pParameters = rootparam; // ルートパラメータの先頭アドレス
 	rootSignatureDesc.NumParameters = 2; // ルートパラメータ数
 
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //横方向の繰り返し
-	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //縦方向の繰り返し
-	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //奥行きの繰り返し
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK; //ボーダーは黒
-	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR; //線形補完
-	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX; //ミップマップ最大値
-	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // ピクセルシェーダーから見える
-	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER; // リサンプリングしない
+	D3D12_STATIC_SAMPLER_DESC samplerDesc[2] = {};
+	samplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //横方向の繰り返し
+	samplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //縦方向の繰り返し
+	samplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //奥行きの繰り返し
+	samplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK; //ボーダーは黒
+	samplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR; //線形補完
+	samplerDesc[0].MaxLOD = D3D12_FLOAT32_MAX; //ミップマップ最大値
+	samplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // ピクセルシェーダーから見える
+	samplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER; // リサンプリングしない
 
-	rootSignatureDesc.pStaticSamplers = &samplerDesc;
-	rootSignatureDesc.NumStaticSamplers = 1;
+	samplerDesc[1] = samplerDesc[0]; // 変更点以外をコピーする
+	// 繰り返しではなく，クランプにする
+	samplerDesc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP; 
+	samplerDesc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP; 
+	samplerDesc[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP; 
+	samplerDesc[1].ShaderRegister = 1; // シェーダースロット番号を忘れないように
 
+	rootSignatureDesc.pStaticSamplers = samplerDesc;
+	rootSignatureDesc.NumStaticSamplers = 2;
 	ID3DBlob* rootSigBlob = nullptr;
 	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob);
 	result = _dev->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootsignature));
@@ -1299,10 +1305,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
-		//angle += 0.01f;
-		//mapMatrix->world = XMMatrixRotationY(angle);
-		//mapMatrix->view = viewMat;
-		//mapMatrix->proj = projMat;
+		angle += 0.01f;
+		mapMatrix->world = XMMatrixRotationY(angle);
+		mapMatrix->view = viewMat;
+		mapMatrix->proj = projMat;
 
 		//DirectX処理
 		//バックバッファのインデックスを取得
@@ -1363,6 +1369,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		auto cbvsrvIncSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5; // CBVとSRVとSRVとSRVとSRVがセットなので5倍
 
+		std::cout << "cbvsrvIncSize: " << cbvsrvIncSize << std::endl;
 		for (auto& m : materials)
 		{
 			_cmdList->SetGraphicsRootDescriptorTable(1, materialH);
